@@ -1,0 +1,14 @@
+NEXOS — instalación definitiva
+
+1. Subí TODOS los archivos de esta carpeta a un hosting estático HTTPS.
+2. Abrí la dirección HTTPS de NEXOS en Google Chrome en Android.
+3. Chrome mostrará "Instalar NEXOS" o "Agregar a pantalla de inicio".
+4. Instalá la app. Desde entonces podés abrirla desde el ícono NEXOS.
+5. Los datos del inventario se guardan en el dispositivo. La app funciona offline
+   después de la primera carga.
+6. Usá "EXPORTAR RESPALDO" periódicamente para tener una copia fuera del navegador.
+   Esa es la protección contra borrar datos del navegador, cambiar de teléfono, etc.
+
+Importante:
+- No borres los datos del sitio de NEXOS si querés conservar el inventario local.
+- El respaldo JSON es la copia de seguridad definitiva y permite recuperar el inventario.
