@@ -1,0 +1,16 @@
+{
+  "name": "NEXOS — Control de Stock",
+  "short_name": "NEXOS",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f4f2",
+  "theme_color": "#111111",
+  "icons": [
+    {
+      "src": "nexos_symbol.png?v=4",
+      "sizes": "1536x1536",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
