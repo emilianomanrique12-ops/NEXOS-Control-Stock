@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111">
+<link rel="manifest" href="manifest.webmanifest">
+<title>NEXOS · Stock</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f5f2;color:#161616;font-family:Arial,sans-serif;padding-bottom:72px}
+.app{max-width:640px;margin:auto;padding:10px}header{display:flex;align-items:center;gap:9px;margin:4px 2px 12px}
+header img{width:44px;height:44px;object-fit:contain;border-radius:9px}h1{font-size:18px;letter-spacing:.1em;margin:0}header small{font-size:7px;color:#777;font-weight:bold;letter-spacing:.16em}
+.view{display:none}.view.active{display:block}.head{display:flex;align-items:center;justify-content:space-between;margin:7px 2px 9px}.head h2{font-size:11px;margin:0;letter-spacing:.05em}
+button,input,textarea,select{font:inherit}button{cursor:pointer}.btn{border:1px solid #ddd;background:#fff;border-radius:10px;padding:9px 11px;font-size:8px;font-weight:900}.primary{background:#111;color:#fff;border-color:#111}.danger{color:#c22}.wide{width:100%}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.metric{background:#fff;border:1px solid #e1e1de;border-radius:12px;padding:10px}.metric span{font-size:7px;color:#777;font-weight:900}.metric b{display:block;font-size:16px;margin-top:4px}.metric small{font-size:7px;color:#777}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}.list{background:#fff;border:1px solid #e1e1de;border-radius:12px;overflow:hidden}.row{display:flex;justify-content:space-between;padding:9px 10px;border-bottom:1px solid #eee;font-size:8px}.empty{padding:22px;text-align:center;color:#777;font-size:8px}
+.search{width:100%;border:1px solid #ddd;border-radius:10px;background:#fff;padding:10px;font-size:10px;margin-bottom:7px}.chips{display:flex;gap:5px;overflow:auto;margin-bottom:7px}.chip{white-space:nowrap;border:1px solid #ddd;background:#fff;border-radius:99px;padding:7px 10px;font-size:7px;font-weight:900}.chip.active{background:#111;color:#fff}
+.product{position:relative;background:#fff;border:1px solid #e1e1de;border-radius:12px;padding:9px 10px;margin:5px 0}.producttop{display:grid;grid-template-columns:1fr auto;gap:8px}.name{font-size:10px;font-weight:900;padding-right:30px}.desc{font-size:7px;color:#777;margin-top:3px;line-height:1.3}.stock{text-align:right;font-size:21px;font-weight:950}.stock.ok{color:#17834b}.stock.warn{color:#b87000}.stock.bad{color:#c32c28}.state{text-align:right;font-size:6px;color:#777;font-weight:900}.prices{border-top:1px solid #eee;margin-top:7px;padding-top:6px;display:flex;justify-content:space-between;font-size:7px;color:#777}.prices b{color:#111;font-size:8px}.gear{position:absolute;right:7px;top:7px;width:27px;height:27px;border:1px solid #ddd;border-radius:8px;background:#fff}
+.move{position:relative;background:#fff;border:1px solid #e1e1de;border-radius:12px;padding:9px 10px;margin:5px 0;display:grid;grid-template-columns:1fr auto;gap:8px}.mname{font-size:9px;font-weight:900}.meta{font-size:6px;color:#777;margin-top:3px}.qty{font-size:15px;font-weight:950}.plus{color:#17834b}.minus{color:#c32c28}.moveactions{display:none;position:absolute;right:7px;top:50%;transform:translateY(-50%);gap:4px}.editmode .moveactions{display:flex}.moveactions button{width:30px;height:30px;border:1px solid #ddd;border-radius:8px;background:#fff}
+nav{position:fixed;z-index:20;bottom:0;left:0;right:0;height:64px;background:#fff;border-top:1px solid #ddd}.navin{max-width:640px;height:100%;margin:auto;display:grid;grid-template-columns:repeat(3,1fr)}.navbtn{border:0;background:transparent;color:#888;font-size:7px;font-weight:900}.navbtn span{display:block;font-size:17px;margin-bottom:2px}.navbtn.active{color:#111}
+.modal{display:none;position:fixed;z-index:50;inset:0;background:#0007;align-items:flex-end;padding:7px}.modal.open{display:flex}.sheet{background:#fff;width:min(640px,100%);max-height:93vh;overflow:auto;border-radius:17px;padding:14px}.sheet h3{font-size:14px;margin:0}.sub{font-size:7px;color:#777;margin:4px 0 11px}.field{margin:7px 0}.field label{display:block;font-size:7px;color:#777;font-weight:900;margin-bottom:4px}.field input,.field textarea,.line input,.line select{width:100%;border:1px solid #ddd;border-radius:9px;padding:9px;font-size:10px;background:#fff}.field textarea{min-height:55px}.two{display:grid;grid-template-columns:1fr 1fr;gap:6px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}.widegrid{grid-column:1/-1}.line{display:grid;grid-template-columns:1fr 64px 31px;gap:5px;margin:5px 0}.line button{border:1px solid #ddd;background:#fff;border-radius:8px}.total{display:flex;justify-content:space-between;background:#f3f3f0;border-radius:9px;padding:10px;font-size:9px;font-weight:900;margin-top:7px}.note{font-size:7px;color:#777;line-height:1.4}.status{border:1px solid #ddd;background:#fafafa;border-radius:9px;padding:9px;font-size:7px}.toast{position:fixed;z-index:100;bottom:75px;left:50%;transform:translateX(-50%);background:#111;color:#fff;border-radius:99px;padding:8px 12px;font-size:7px;font-weight:900;opacity:0}.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+<header><img src="nexos_logo.png" alt="NEXOS"><div><h1>NEXOS</h1><small>CONTROL DE STOCK</small></div></header>
+
+<section id="summary" class="view active">
+<div class="head"><h2>RESUMEN</h2><button class="btn" id="settings">⚙️</button></div>
+<div class="grid">
+<div class="metric"><span>VENTAS HOY</span><b id="daySales">$0</b><small id="dayOps">0 operaciones</small></div>
+<div class="metric"><span>GANANCIA HOY</span><b id="dayProfit">$0</b></div>
+<div class="metric"><span>VENTAS SEMANA</span><b id="weekSales">$0</b><small id="weekOps">0 operaciones</small></div>
+<div class="metric"><span>GANANCIA SEMANA</span><b id="weekProfit">$0</b></div>
+<div class="metric"><span>VENTAS MES</span><b id="monthSales">$0</b><small id="monthOps">0 operaciones</small></div>
+<div class="metric"><span>GANANCIA MES</span><b id="monthProfit">$0</b></div>
+<div class="metric"><span>UNIDADES EN STOCK</span><b id="units">0</b></div>
+<div class="metric"><span>VALOR A COSTO</span><b id="costValue">$0</b></div>
+<div class="metric"><span>VALOR A VENTA</span><b id="saleValue">$0</b></div>
+<div class="metric"><span>GANANCIA POTENCIAL</span><b id="potential">$0</b></div>
+</div>
+<div class="quick"><button class="btn primary" id="sale1">＋ NUEVA VENTA</button><button class="btn" id="buy1">＋ NUEVA COMPRA</button></div>
+<div class="head"><h2>PARA REPONER</h2></div><div class="list" id="reorder"></div>
+</section>
+
+<section id="stock" class="view">
+<div class="head"><h2>STOCK</h2><button class="btn" id="newProduct">＋ ARTÍCULO</button></div>
+<input class="search" id="search" placeholder="🔎 Buscar producto...">
+<div class="chips"><button class="chip active" data-filter="all">TODOS</button><button class="chip" data-filter="ok">OK</button><button class="chip" data-filter="warn">REPOSICIÓN</button><button class="chip" data-filter="bad">SIN STOCK</button></div>
+<div id="products"></div>
+</section>
+
+<section id="moves" class="view">
+<div class="head"><h2>MOVIMIENTOS</h2></div>
+<div class="quick"><button class="btn primary" id="sale2">＋ NUEVA VENTA</button><button class="btn" id="buy2">＋ NUEVA COMPRA</button></div>
+<button class="btn wide" id="editToggle">✏️ EDITAR MOVIMIENTOS</button>
+<div class="chips" style="margin-top:7px"><button class="chip active" data-mfilter="all">TODOS</button><button class="chip" data-mfilter="sale">VENTAS</button><button class="chip" data-mfilter="purchase">COMPRAS</button></div>
+<div id="movementList"></div>
+</section>
+</div>
+
+<nav><div class="navin">
+<button class="navbtn active" data-view="summary"><span>▣</span>RESUMEN</button>
+<button class="navbtn" data-view="stock"><span>▤</span>STOCK</button>
+<button class="navbtn" data-view="moves"><span>⇅</span>MOVIMIENTOS</button>
+</div></nav>
+
+<div class="modal" id="productModal"><div class="sheet">
+<h3 id="productHeading">ARTÍCULO</h3><p class="sub">Configuración individual</p>
+<div class="field"><label>NOMBRE</label><input id="pName"></div>
+<div class="field"><label>DESCRIPCIÓN</label><textarea id="pDesc"></textarea></div>
+<div class="two">
+<div class="field"><label>PRECIO COSTO</label><input id="pCost" type="number" min="0"></div>
+<div class="field"><label>PRECIO VENTA</label><input id="pSale" type="number" min="0"></div>
+<div class="field"><label>STOCK ACTUAL</label><input id="pStock" type="number" min="0"></div>
+<div class="field"><label>STOCK MÍNIMO</label><input id="pMin" type="number" min="0"></div>
+<div class="field"><label>STOCK OBJETIVO</label><input id="pTarget" type="number" min="0"></div>
+</div>
+<p class="note">No hay botones +/− en el stock. El stock se modifica por ventas y compras; esta pantalla sirve para cargar o corregir el stock actual y configurar cada artículo.</p>
+<div class="actions"><button class="btn" data-close="productModal">CANCELAR</button><button class="btn primary" id="saveProduct">GUARDAR</button><button class="btn danger widegrid" id="deleteProduct">ELIMINAR ARTÍCULO</button></div>
+</div></div>
+
+<div class="modal" id="txModal"><div class="sheet">
+<h3 id="txHeading">NUEVA VENTA</h3><p class="sub">Una venta/compra puede contener varios artículos.</p>
+<div id="txLines"></div><button class="btn wide" id="addLine">＋ AGREGAR ARTÍCULO</button>
+<div class="total"><span>TOTAL</span><span id="txTotal">$0</span></div>
+<div class="actions"><button class="btn" data-close="txModal">CANCELAR</button><button class="btn primary" id="saveTx">REGISTRAR</button></div>
+</div></div>
+
+<div class="modal" id="editMoveModal"><div class="sheet">
+<h3>EDITAR MOVIMIENTO</h3><p class="sub">El stock se recalcula automáticamente.</p>
+<div class="field"><label>CANTIDAD</label><input id="editQty" type="number" min="1"></div>
+<div class="field"><label>PRECIO UNITARIO</label><input id="editPrice" type="number" min="0"></div>
+<div class="actions"><button class="btn" data-close="editMoveModal">CANCELAR</button><button class="btn primary" id="saveMove">GUARDAR</button></div>
+</div></div>
+
+<div class="modal" id="settingsModal"><div class="sheet">
+<h3>CONFIGURACIÓN</h3><p class="sub">Los datos quedan guardados localmente en el dispositivo.</p>
+<div class="status" id="storage"></div>
+<div class="actions">
+<button class="btn" id="export">💾 EXPORTAR RESPALDO</button>
+<button class="btn" id="import">📥 IMPORTAR RESPALDO</button>
+<button class="btn widegrid" data-close="settingsModal">CERRAR</button>
+</div>
+<input id="backup" type="file" accept=".json,application/json" hidden>
+</div></div>
+<div class="modal" id="confirmModal"><div class="sheet"><h3 id="confirmTitle">CONFIRMAR</h3><p class="sub" id="confirmText"></p><div class="actions"><button class="btn" data-close="confirmModal">CANCELAR</button><button class="btn danger" id="confirmOk">CONFIRMAR</button></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY="nexos_control_stock_v2";
+let db={products:[],movements:[]}, productId=null, movementId=null, txType="sale", filter="all", moveFilter="all", search="", confirmFn=null;
+
+const $=x=>document.getElementById(x);
+const uid=()=>Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
+const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0}).format(Number(n)||0);
+function toast(s){$("toast").textContent=s;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),1700)}
+function show(id,on=true){$(id).classList.toggle("open",on)}
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function norm(x){
+ if(!x||typeof x!=="object")throw Error();
+ const products=(Array.isArray(x.products)?x.products:[]).map(p=>({id:p.id||uid(),name:String(p.name||"ARTÍCULO"),description:String(p.description||""),cost:+p.cost||0,sale:+p.sale||0,stock:Math.max(0,Math.floor(+p.stock||0)),min:Math.max(0,Math.floor(+(p.min??p.reorderMin??2)||0)),target:Math.max(0,Math.floor(+(p.target??p.reorderTarget??p.min??5)||0))}));
+ products.forEach(p=>p.target=Math.max(p.target,p.min));
+ const movements=(Array.isArray(x.movements)?x.movements:[]).map(m=>({id:m.id||uid(),type:m.type==="purchase"?"purchase":"sale",date:m.date||new Date().toISOString(),productId:m.productId||"",productName:String(m.productName||""),qty:Math.max(1,Math.floor(+m.qty||1)),price:+m.price||0,costAtSale:+(m.costAtSale??m.cost)||0}));
+ return {products,movements}
+}
+function load(){try{const r=localStorage.getItem(KEY);if(r)db=norm(JSON.parse(r))}catch(e){db={products:[],movements:[]}}}
+function prod(id){return db.products.find(p=>p.id===id)}
+function move(id){return db.movements.find(m=>m.id===id)}
+function status(p){return p.stock<=0?["bad","SIN STOCK"]:p.stock<=p.min?["warn","REPOSICIÓN"]:["ok","OK"]}
+
+function renderProducts(){
+ const arr=db.products.filter(p=>(!search||(p.name+" "+p.description).toLowerCase().includes(search.toLowerCase()))&&(filter==="all"||status(p)[0]===filter));
+ $("products").innerHTML=arr.length?arr.map(p=>{let[s,l]=status(p);return `<div class="product"><button class="gear" data-p="${p.id}">⚙️</button><div class="producttop"><div><div class="name">${esc(p.name)}</div><div class="desc">${esc(p.description)}</div></div><div><div class="stock ${s}">${p.stock}</div><div class="state">${l}</div></div></div><div class="prices"><span>Costo <b>${money(p.cost)}</b></span><span>Venta <b>${money(p.sale)}</b></span></div></div>`}).join(""):"<div class='empty'>No hay artículos para mostrar.</div>"
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function renderSummary(){
+ const now=new Date(),d=new Date(now);d.setHours(0,0,0,0),w=new Date(d);w.setDate(w.getDate()-((w.getDay()+6)%7));m=new Date(now.getFullYear(),now.getMonth(),1);
+ const calc=start=>{let s=0,p=0,o=0;db.movements.forEach(x=>{if(x.type!=="sale"||new Date(x.date)<start)return;s+=x.qty*x.price;p+=x.qty*(x.price-x.costAtSale);o++});return[s,p,o]};
+ let a=calc(d),b=calc(w),c=calc(m);
+ $("daySales").textContent=money(a[0]);$("dayProfit").textContent=money(a[1]);$("dayOps").textContent=a[2]+" operaciones";
+ $("weekSales").textContent=money(b[0]);$("weekProfit").textContent=money(b[1]);$("weekOps").textContent=b[2]+" operaciones";
+ $("monthSales").textContent=money(c[0]);$("monthProfit").textContent=money(c[1]);$("monthOps").textContent=c[2]+" operaciones";
+ let u=0,cost=0,sale=0;db.products.forEach(p=>{u+=p.stock;cost+=p.stock*p.cost;sale+=p.stock*p.sale});
+ $("units").textContent=u;$("costValue").textContent=money(cost);$("saleValue").textContent=money(sale);$("potential").textContent=money(sale-cost);
+ const low=db.products.filter(p=>p.stock<=p.min);
+ $("reorder").innerHTML=low.length?low.map(p=>`<div class="row"><b>${esc(p.name)}</b><span>${Math.max(0,p.target-p.stock)} para llegar a ${p.target}</span></div>`).join(""):"<div class='empty'>Todo en niveles normales.</div>";
+}
+function renderMoves(){
+ const a=db.movements.filter(x=>moveFilter==="all"||x.type===moveFilter).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+ $("movementList").innerHTML=a.length?a.map(x=>{let d=new Date(x.date);return `<div class="move"><div><div class="mname">${esc(x.productName)}</div><div class="meta">${x.type==="sale"?"Venta":"Compra"} · ${d.toLocaleDateString("es-AR")} ${d.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})} · ${money(x.price)} c/u</div></div><div class="qty ${x.type==="sale"?"minus":"plus"}">${x.type==="sale"?"−":"+"}${x.qty}</div><div class="moveactions"><button data-edit="${x.id}">⚙️</button><button data-del="${x.id}">🗑️</button></div></div>`}).join(""):"<div class='empty'>No hay movimientos.</div>"
+}
+function render(){renderProducts();renderSummary();renderMoves()}
+
+function openProduct(id){
+ productId=id||null;let p=id?prod(id):null;$("productHeading").textContent=p?"CONFIGURAR ARTÍCULO":"NUEVO ARTÍCULO";
+ $("pName").value=p?.name||"";$("pDesc").value=p?.description||"";$("pCost").value=p?.cost??0;$("pSale").value=p?.sale??0;$("pStock").value=p?.stock??0;$("pMin").value=p?.min??2;$("pTarget").value=p?.target??5;
+ $("deleteProduct").style.display=p?"block":"none";show("productModal")
+}
+$("saveProduct").onclick=()=>{let name=$("pName").value.trim();if(!name)return toast("Falta el nombre");let x={name,description:$("pDesc").value.trim(),cost:+$("pCost").value||0,sale:+$("pSale").value||0,stock:Math.max(0,Math.floor(+$("pStock").value||0)),min:Math.max(0,Math.floor(+$("pMin").value||0)),target:Math.max(0,Math.floor(+$("pTarget").value||0))};x.target=Math.max(x.target,x.min);if(productId)Object.assign(prod(productId),x);else db.products.push({id:uid(),...x});save();show("productModal",false);render();toast("Guardado")}
+$("deleteProduct").onclick=()=>{let id=productId;confirm("Eliminar artículo","Se eliminará el artículo. ¿Continuar?",()=>{db.products=db.products.filter(p=>p.id!==id);save();show("confirmModal",false);show("productModal",false);render();toast("Artículo eliminado")})}
+
+function openTx(type){txType=type;$("txHeading").textContent=type==="sale"?"NUEVA VENTA":"NUEVA COMPRA";$("txLines").innerHTML="";if(!db.products.length)return toast("Primero agregá un artículo");addLine();show("txModal")}
+function addLine(){let r=document.createElement("div");r.className="line";r.innerHTML=`<select>${db.products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("")}</select><input type="number" min="1" value="1"><button>×</button>`;r.querySelector("button").onclick=()=>{r.remove();calcTx()};r.querySelector("select").onchange=calcTx;r.querySelector("input").oninput=calcTx;$("txLines").appendChild(r);calcTx()}
+function calcTx(){let t=0;[...$("txLines").children].forEach(r=>{let p=prod(r.querySelector("select").value),q=+r.querySelector("input").value||1;t+=q*(txType==="sale"?p.sale:p.cost)});$("txTotal").textContent=money(t)}
+$("saveTx").onclick=()=>{let rows=[...$("txLines").children].map(r=>({p:prod(r.querySelector("select").value),q:Math.max(1,Math.floor(+r.querySelector("input").value||1))}));if(!rows.length)return toast("Agregá un artículo");if(txType==="sale"&&rows.some(x=>x.q>x.p.stock))return toast("Stock insuficiente");let date=new Date().toISOString();rows.forEach(x=>{let price=txType==="sale"?x.p.sale:x.p.cost;x.p.stock+=txType==="sale"?-x.q:x.q;db.movements.push({id:uid(),type:txType,date,productId:x.p.id,productName:x.p.name,qty:x.q,price,costAtSale:x.p.cost})});save();show("txModal",false);render();toast("Operación registrada")}
+
+function confirm(t,txt,fn){$("confirmTitle").textContent=t;$("confirmText").textContent=txt;confirmFn=fn;show("confirmModal")}
+function editMove(id){movementId=id;let x=move(id);$("editQty").value=x.qty;$("editPrice").value=x.price;show("editMoveModal")}
+$("saveMove").onclick=()=>{let x=move(movementId),p=prod(x.productId),old=x.qty,n=Math.max(1,Math.floor(+$("editQty").value||1)),price=+$("editPrice").value||0;p.stock+=x.type==="sale"?old:-old;if(x.type==="sale"&&n>p.stock){p.stock-=old;return toast("Stock insuficiente")}p.stock+=x.type==="sale"?-n:n;x.qty=n;x.price=price;save();show("editMoveModal",false);render();toast("Movimiento actualizado")}
+function deleteMove(id){let x=move(id);confirm("Eliminar movimiento","El stock se ajustará automáticamente. ¿Continuar?",()=>{let p=prod(x.productId);if(p)p.stock+=x.type==="sale"?x.qty:-x.qty;if(p&&p.stock<0)p.stock=0;db.movements=db.movements.filter(m=>m.id!==id);save();show("confirmModal",false);render();toast("Movimiento eliminado")})}
+
+$("settings").onclick=()=>{let bytes=new Blob([JSON.stringify(db)]).size;$("storage").textContent=`${db.products.length} artículos · ${db.movements.length} movimientos · ${bytes} bytes. Guardado automático en este dispositivo.`;show("settingsModal")}
+$("export").onclick=()=>{let b=new Blob([JSON.stringify({app:"NEXOS",schema:8,exportedAt:new Date().toISOString(),...db},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="NEXOS_respaldo_"+new Date().toISOString().slice(0,10)+".json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+$("import").onclick=()=>$("backup").click();$("backup").onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{db=norm(JSON.parse(r.result));save();render();show("settingsModal",false);toast("Respaldo importado")}catch(_){toast("Respaldo no válido")}};r.readAsText(f);e.target.value=""}
+
+document.querySelectorAll(".navbtn").forEach(b=>b.onclick=()=>{document.querySelectorAll(".navbtn").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));$(b.dataset.view).classList.add("active")});
+$("search").oninput=e=>{search=e.target.value;renderProducts()};$("newProduct").onclick=()=>openProduct();
+document.querySelectorAll("[data-filter]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-filter]").forEach(x=>x.classList.remove("active"));b.classList.add("active");filter=b.dataset.filter;renderProducts()});
+document.querySelectorAll("[data-mfilter]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-mfilter]").forEach(x=>x.classList.remove("active"));b.classList.add("active");moveFilter=b.dataset.mfilter;renderMoves()});
+$("products").onclick=e=>{let b=e.target.closest("[data-p]");if(b)openProduct(b.dataset.p)};
+$("sale1").onclick=()=>openTx("sale");$("sale2").onclick=()=>openTx("sale");$("buy1").onclick=()=>openTx("purchase");$("buy2").onclick=()=>openTx("purchase");$("addLine").onclick=addLine;
+$("editToggle").onclick=()=>{document.body.classList.toggle("editmode");$("editToggle").classList.toggle("primary")};
+$("movementList").onclick=e=>{if(!document.body.classList.contains("editmode"))return;let a=e.target.closest("[data-edit]"),b=e.target.closest("[data-del]");if(a)editMove(a.dataset.edit);if(b)deleteMove(b.dataset.del)};
+$("confirmOk").onclick=()=>{if(confirmFn)confirmFn();confirmFn=null};
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>show(b.dataset.close,false));document.querySelectorAll(".modal").forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.remove("open")});
+load();render();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script>
+</body></html>
