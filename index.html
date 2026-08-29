@@ -145,6 +145,40 @@ nav{position:fixed;z-index:20;bottom:0;left:0;right:0;height:66px;background:#ff
   .product-gear{width:52px !important;min-width:52px !important}
 }
 
+
+/* V9.3.1 - separación definitiva STOCK / CONFIGURACIÓN */
+.product-main{
+  display:grid !important;
+  grid-template-columns:64px minmax(0,1fr) 92px 64px !important;
+  column-gap:18px !important;
+  align-items:center !important;
+}
+.product-stock{
+  grid-column:3 !important;
+  width:92px !important;
+  min-width:92px !important;
+  justify-self:center !important;
+  text-align:center !important;
+  margin:0 !important;
+  padding:6px 4px !important;
+}
+.product-gear{
+  grid-column:4 !important;
+  width:64px !important;
+  min-width:64px !important;
+  justify-self:end !important;
+  margin:0 !important;
+  padding:6px !important;
+}
+@media(max-width:430px){
+  .product-main{
+    grid-template-columns:58px minmax(0,1fr) 78px 58px !important;
+    column-gap:14px !important;
+  }
+  .product-stock{width:78px !important;min-width:78px !important}
+  .product-gear{width:58px !important;min-width:58px !important}
+}
+
 </style>
 </head>
 <body>
@@ -659,6 +693,38 @@ maybeOfferRecovery();
   document.addEventListener('DOMContentLoaded',decorate);
   setTimeout(decorate,200);
   new MutationObserver(function(){setTimeout(decorate,0)}).observe(document.body,{subtree:true,childList:true});
+})();
+</script>
+
+
+<script>
+(function(){
+  function colorMovement(el){
+    var t=(el.textContent||'').toLowerCase();
+    var sale=t.indexOf('venta')>=0, purchase=t.indexOf('compra')>=0;
+    if(!sale && !purchase) return;
+    var cls=sale?'move-sale':'move-purchase';
+    el.classList.add(cls);
+    el.querySelectorAll('*').forEach(function(n){
+      if(n.children.length===0){
+        var s=(n.textContent||'').trim();
+        if(/^[+-]\s*\d+(?:[.,]\d+)?$/.test(s)){
+          n.classList.add(cls);
+          n.style.color=sale?'#16834a':'#1769aa';
+          n.style.fontWeight='700';
+        }
+      }
+    });
+  }
+  function run(){
+    document.querySelectorAll('.move,.movement,.movement-item').forEach(colorMovement);
+  }
+  var st=document.createElement('style');
+  st.textContent='.move-sale{color:#16834a!important}.move-purchase{color:#1769aa!important}';
+  document.head.appendChild(st);
+  document.addEventListener('DOMContentLoaded',run);
+  setTimeout(run,300);
+  new MutationObserver(function(){setTimeout(run,0)}).observe(document.body,{subtree:true,childList:true});
 })();
 </script>
 
