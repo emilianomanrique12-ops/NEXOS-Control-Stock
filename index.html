@@ -179,6 +179,60 @@ nav{position:fixed;z-index:20;bottom:0;left:0;right:0;height:66px;background:#ff
   .product-gear{width:58px !important;min-width:58px !important}
 }
 
+
+/* NEXOS V9.4 — separación estructural definitiva del STOCK y la ⚙️ */
+.product-main{
+  display:grid !important;
+  grid-template-columns:64px minmax(0,1fr) 96px 52px !important;
+  column-gap:20px !important;
+  align-items:center !important;
+  width:100% !important;
+}
+.product-image-wrap{
+  width:64px !important;height:64px !important;
+  display:flex !important;align-items:center !important;justify-content:center !important;
+}
+.product-image-wrap .thumb{
+  width:64px !important;height:64px !important;
+  min-width:64px !important;max-width:64px !important;
+  object-fit:cover !important;border-radius:12px !important;
+}
+.product-info{min-width:0 !important}
+.product-stock{
+  width:96px !important;min-width:96px !important;
+  justify-self:center !important;text-align:center !important;
+  display:flex !important;flex-direction:column !important;
+  align-items:center !important;justify-content:center !important;
+  overflow:visible !important;
+}
+.product-stock .stock{white-space:nowrap !important;line-height:1 !important}
+.product-gear{
+  width:52px !important;min-width:52px !important;height:44px !important;
+  justify-self:end !important;display:flex !important;
+  align-items:center !important;justify-content:center !important;
+  position:relative !important;z-index:5 !important;
+}
+.move .qty.minus{color:#16834a !important;font-weight:700 !important}
+.move .qty.plus{color:#1769aa !important;font-weight:700 !important}
+@media(max-width:430px){
+  .product-main{
+    grid-template-columns:56px minmax(0,1fr) 76px 48px !important;
+    column-gap:14px !important;
+  }
+  .product-image-wrap,.product-image-wrap .thumb{
+    width:56px !important;height:56px !important;
+    min-width:56px !important;max-width:56px !important;
+  }
+  .product-stock{width:76px !important;min-width:76px !important}
+  .product-gear{width:48px !important;min-width:48px !important}
+}
+
+
+.history{display:grid;gap:5px;margin:0 0 12px}
+.history-title{font-size:10px;font-weight:800;letter-spacing:.08em;margin-top:4px;opacity:.65}
+.history-row{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:10px;font-size:12px}
+.history-row span{opacity:.72;text-align:right}
+
 </style>
 </head>
 <body>
@@ -204,6 +258,8 @@ nav{position:fixed;z-index:20;bottom:0;left:0;right:0;height:66px;background:#ff
     <div class="metric"><span>GANANCIA POTENCIAL</span><b id="potential">$0</b></div>
   </div>
   <div class="quick"><button class="btn primary" id="newSaleSummary">＋ NUEVA VENTA</button><button class="btn" id="newBuySummary">＋ NUEVA COMPRA</button></div>
+  <div class="head"><h2>HISTORIAL</h2></div>
+  <div id="statsHistory" class="history"></div>
   <div class="head"><h2>PARA REPONER</h2></div>
   <div class="list" id="reorderList"></div>
 </section>
@@ -301,7 +357,7 @@ nav{position:fixed;z-index:20;bottom:0;left:0;right:0;height:66px;background:#ff
 const STORE_KEY="nexos_control_stock_v2";
 const FONT_KEY="nexos_font_scale";
 const EMBEDDED_BACKUP={"version":9,"products":[{"id":"correa-sencilla","name":"CORREA SENCILLA","description":"PARA GUITARRA","cost":3400.0,"sale":6500.0,"stock":0,"min":0,"target":0},{"id":"capo-guitarra","name":"CAPO DE GUITARRA","description":"CAPOTRASTE","cost":3000.0,"sale":6000.0,"stock":0,"min":0,"target":0},{"id":"pack-de-puas","name":"PACK DE PÚAS","description":"10 UNIDADES DE 0.46MM","cost":0.0,"sale":4000.0,"stock":1,"min":0,"target":0},{"id":"slide-guitar","name":"SLIDE GUITAR","description":"TRANSPARENTE DE 60MM","cost":3400.0,"sale":7000.0,"stock":2,"min":0,"target":0},{"id":"correa-porta-puas","name":"CORREA DE GUITARRA","description":"DISEÑO CON PORTA PÚAS","cost":6000.0,"sale":12000.0,"stock":2,"min":0,"target":0},{"id":"puas-dunlop","name":"PÚAS DUNLOP","description":"3 UNIDADES DE 1.44MM","cost":0.0,"sale":3000.0,"stock":0,"min":0,"target":0},{"id":"pack-puas-alice","name":"PACK PÚAS ALICE","description":"10 UNIDADES","cost":0.0,"sale":5000.0,"stock":1,"min":0,"target":0},{"id":"seguros-de-correa","name":"SEGUROS DE CORREA","description":"SAFETY LOCK","cost":1000.0,"sale":6000.0,"stock":6,"min":0,"target":0},{"id":"entrenador-fuerza","name":"ENTRENADOR DE FUERZA","description":"PARA DEDOS","cost":3500.0,"sale":10000.0,"stock":2,"min":0,"target":0},{"id":"baquetero","name":"BAQUETERO","description":"CAPACIDAD DE PARES","cost":10000.0,"sale":15000.0,"stock":0,"min":0,"target":0},{"id":"encordado","name":"ENCORDADO","description":"GUITARRA CLÁSICA","cost":3000.0,"sale":6000.0,"stock":0,"min":0,"target":0},{"id":"soporte-pared","name":"SOPORTE DE PARED","description":"PARA GUITARRAS Y BAJOS","cost":0.0,"sale":6000.0,"stock":0,"min":0,"target":0},{"id":"caja-de-puas","name":"CAJA DE PÚAS","description":"50 UNIDADES DE 0.46MM","cost":5000.0,"sale":12000.0,"stock":1,"min":0,"target":0},{"id":"baquetas","name":"BAQUETAS 5A","description":"","cost":3900.0,"sale":8000.0,"stock":11,"min":10,"target":0},{"id":"ayudante-soldadura","name":"AYUDANTE DE SOLDADURA","description":"ESTACIÓN PORTÁTIL","cost":2600.0,"sale":6000.0,"stock":2,"min":0,"target":0},{"id":"afinador-electronico","name":"AFINADOR ELECTRÓNICO","description":"12 OPCIONES DE AFINACIÓN","cost":4800.0,"sale":10000.0,"stock":1,"min":5,"target":0},{"id":"cuerdas-encordado","name":"CUERDAS - ENCORDADO","description":"GUITARRA ELECTROACÚSTICA","cost":3000.0,"sale":6000.0,"stock":5,"min":0,"target":0},{"id":"correa-porta-pua-triple","name":"CORREA DE GUITARRA","description":"CON PORTA PÚAS TRIPLE","cost":0.0,"sale":12000.0,"stock":0,"min":0,"target":0},{"id":"llave-de-afinar","name":"LLAVE DE AFINAR","description":"PARA BATERÍA","cost":2800.0,"sale":6000.0,"stock":3,"min":0,"target":0},{"id":"puntas-de-practica","name":"PUNTAS DE PRÁCTICA","description":"REBOTE SIN P. INSTRUMENTO","cost":4000.0,"sale":8000.0,"stock":2,"min":0,"target":0},{"id":"correa-police","name":"CORREA DE GUITARRA","description":"DISEÑO POLICE","cost":5500.0,"sale":12000.0,"stock":0,"min":0,"target":0},{"id":"moongels-bateria","name":"MOONGELS BATERÍA","description":"6 UNIDADES","cost":3500.0,"sale":10000.0,"stock":5,"min":4,"target":0},{"id":"tapa-boca-guitarra","name":"TAPA BOCA DE GUITARRA","description":"ANTI FEEDBACK","cost":6000.0,"sale":12000.0,"stock":2,"min":0,"target":0},{"id":"custom-1786644970170","name":"BAQUETAS 7A","description":"","cost":3600.0,"sale":8000.0,"stock":5,"min":10,"target":0}],"operations":[{"id":"40ab8ef6-2952-4ab0-8bbb-285bd6567d33","type":"sale","date":"2026-08-14T16:28:22.281Z","items":[{"productId":"custom-1786644970170","name":"BAQUETAS 7A","qty":1,"unitPrice":8000.0,"cost":3600.0}]},{"id":"e7ad6670-9e0e-4d18-8f96-86db5fa9356c","type":"sale","date":"2026-08-14T16:28:11.957Z","items":[{"productId":"baquetas","name":"BAQUETAS 5A","qty":1,"unitPrice":8000.0,"cost":3900.0}]},{"id":"5a07cb1e-9afd-438d-af39-2040c21176d7","type":"sale","date":"2026-08-14T16:27:59.655Z","items":[{"productId":"baquetero","name":"BAQUETERO","qty":1,"unitPrice":15000.0,"cost":10000.0}]},{"id":"65a045e7-a199-4dd3-b4de-eb1ca4a54f52","type":"sale","date":"2026-08-14T00:21:09.423Z","items":[{"productId":"correa-police","name":"CORREA DE GUITARRA","qty":1,"unitPrice":12000.0,"cost":5500.0}]},{"id":"29503b00-c204-4845-9b8f-5edd3a05add5","type":"sale","date":"2026-08-14T00:18:54.385Z","items":[{"productId":"baquetas","name":"BAQUETAS 5A","qty":1,"unitPrice":8000.0,"cost":3900.0}]}]};
-let state={products:[],operations:[]}, activeProductId=null, transactionType="sale", editOperationId=null, filter="all", moveFilter="all", search="", transactionSearch="", confirmFn=null;
+let state={products:[],operations:[],statsHistory:{weeks:{},months:{}}}, activeProductId=null, transactionType="sale", editOperationId=null, filter="all", moveFilter="all", search="", transactionSearch="", confirmFn=null;
 
 const $=id=>document.getElementById(id);
 const uid=()=>Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
@@ -335,7 +391,7 @@ function normalizeBackup(raw){
     }
     operations=[...opMap.values()];
   }
-  return {products,operations};
+  const history=raw.statsHistory&&typeof raw.statsHistory==="object"?raw.statsHistory:{weeks:{},months:{}}; return {products,operations,statsHistory:{weeks:history.weeks||{},months:history.months||{}}};
 }
 function isValidState(x){return x&&Array.isArray(x.products)&&x.products.length>0&&Array.isArray(x.operations)}
 async function resizeImage(file){
@@ -352,7 +408,7 @@ function load(){
     const raw=localStorage.getItem(STORE_KEY);
     if(raw){const d=normalizeBackup(JSON.parse(raw));if(isValidState(d)){state=d;return}}
   }catch(e){}
-  state={products:[],operations:[]};
+  state={products:[],operations:[],statsHistory:{weeks:{},months:{}}};
 }
 function status(p){
   if(p.stock<=0)return["bad","SIN STOCK"];
@@ -369,7 +425,7 @@ function renderProducts(){
   $("products").innerHTML=list.length?list.map(p=>{
     const [cls,label]=status(p);
     const thumb=p.image?`<img class="thumb" src="${esc(p.image)}" alt="${esc(p.name)}">`:`<div class="thumb empty" aria-label="Sin imagen">♪</div>`;
-    return `<div class="product"><button class="gear" data-config="${esc(p.id)}">⚙️</button><div class="producttop">${thumb}<div><div class="name">${esc(p.name)}</div><div class="desc">${esc(p.description)}</div></div><div><div class="stock ${cls}">${p.stock}</div><div class="state">${label}</div></div></div><div class="prices"><span>Costo <b>${money(p.cost)}</b></span><span>Venta <b>${money(p.sale)}</b></span></div></div>`;
+    return `<div class="product"><div class="product-main"><div class="product-image-wrap">${thumb}</div><div class="product-info"><div class="name">${esc(p.name)}</div><div class="desc">${esc(p.description)}</div></div><div class="product-stock"><div class="stock ${cls}">${p.stock}</div><div class="state">${label}</div></div><button class="product-gear gear" data-config="${esc(p.id)}" aria-label="Configurar ${esc(p.name)}">⚙️</button></div><div class="prices"><span>Costo <b>${money(p.cost)}</b></span><span>Venta <b>${money(p.sale)}</b></span></div></div>`;
   }).join(""):"<div class='empty'>No hay artículos para mostrar.</div>";
 }
 function periodStats(start){
@@ -380,6 +436,36 @@ function periodStats(start){
   }
   return{sales,profit,ops,units};
 }
+
+function weekKey(d){
+  const x=new Date(d); x.setHours(0,0,0,0);
+  const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day);
+  return x.toISOString().slice(0,10);
+}
+function monthKey(d){const x=new Date(d);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}`;}
+function rebuildStatsHistory(){
+  const weeks={},months={};
+  for(const op of state.operations){
+    if(op.type!=="sale") continue;
+    const total=totalOperation(op), profit=profitOperation(op), units=unitsOperation(op);
+    const wk=weekKey(op.date), mk=monthKey(op.date);
+    for(const [bucket,key] of [[weeks,wk],[months,mk]]){
+      if(!bucket[key]) bucket[key]={sales:0,profit:0,ops:0,units:0};
+      bucket[key].sales+=total; bucket[key].profit+=profit; bucket[key].ops++; bucket[key].units+=units;
+    }
+  }
+  state.statsHistory={weeks,months};
+}
+function renderStatsHistory(){
+  rebuildStatsHistory();
+  const weeks=Object.entries(state.statsHistory.weeks).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,6);
+  const months=Object.entries(state.statsHistory.months).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,6);
+  const wf=weeks.length?weeks.map(([k,v])=>`<div class="history-row"><b>Semana ${k}</b><span>${money(v.sales)} · gan. ${money(v.profit)} · ${v.units} un.</span></div>`).join(""):"<div class='empty'>Todavía no hay ventas registradas.</div>";
+  const mf=months.length?months.map(([k,v])=>`<div class="history-row"><b>${new Date(k+"-01T12:00:00").toLocaleDateString("es-AR",{month:"long",year:"numeric"})}</b><span>${money(v.sales)} · gan. ${money(v.profit)} · ${v.units} un.</span></div>`).join(""):"<div class='empty'>Todavía no hay ventas registradas.</div>";
+  $("statsHistory").innerHTML=`<div class="history-title">ÚLTIMAS SEMANAS</div>${wf}<div class="history-title">ÚLTIMOS MESES</div>${mf}`;
+  save();
+}
+
 function renderSummary(){
   const now=new Date(), day=new Date(now);day.setHours(0,0,0,0);
   const week=new Date(day);week.setDate(week.getDate()-((week.getDay()+6)%7));
@@ -387,7 +473,7 @@ function renderSummary(){
   const d=periodStats(day),w=periodStats(week),m=periodStats(month);
   $("daySales").textContent=money(d.sales);$("dayProfit").textContent=money(d.profit);$("dayOps").textContent=`${d.ops} operaciones`;
   $("weekSales").textContent=money(w.sales);$("weekProfit").textContent=money(w.profit);$("weekOps").textContent=`${w.ops} operaciones`;
-  $("monthSales").textContent=money(m.sales);$("monthProfit").textContent=money(m.profit);$("monthOps").textContent=`${m.ops} operaciones`;
+  $("monthSales").textContent=money(m.sales);$("monthProfit").textContent=money(m.profit);$("monthOps").textContent=`${m.ops} operaciones`; renderStatsHistory();
   let units=0,cost=0,sale=0;for(const p of state.products){units+=p.stock;cost+=p.stock*p.cost;sale+=p.stock*p.sale}
   $("stockUnits").textContent=units;$("stockCost").textContent=money(cost);$("stockSale").textContent=money(sale);$("potential").textContent=money(sale-cost);
   const low=state.products.filter(p=>p.min>0&&p.stock<=p.min);
@@ -497,7 +583,7 @@ function confirmAction(title,text,fn){$("confirmTitle").textContent=title;$("con
 $("confirmOk").onclick=()=>{const fn=confirmFn;confirmFn=null;close("confirmModal");if(fn)fn()};
 
 function exportBackup(){
-  const payload={version:9,exportedAt:new Date().toISOString(),products:state.products,operations:state.operations};
+  rebuildStatsHistory(); const payload={version:9,exportedAt:new Date().toISOString(),products:state.products,operations:state.operations,statsHistory:state.statsHistory};
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}));a.download=`NEXOS_Respaldo_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);toast("Respaldo exportado.");
 }
 function importBackup(file){
