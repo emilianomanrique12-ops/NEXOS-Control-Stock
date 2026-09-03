@@ -233,6 +233,14 @@ nav{position:fixed;z-index:20;bottom:0;left:0;right:0;height:66px;background:#ff
 .history-row{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:10px;font-size:12px}
 .history-row span{opacity:.72;text-align:right}
 
+<style>
+.product-main{display:grid!important;grid-template-columns:64px minmax(0,1fr) 100px 58px!important;column-gap:22px!important;align-items:center!important;width:100%!important}
+.product-stock{grid-column:3!important;width:100px!important;min-width:100px!important;text-align:center!important;justify-self:center!important}
+.product-gear{grid-column:4!important;width:58px!important;min-width:58px!important;justify-self:end!important;display:flex!important;align-items:center!important;justify-content:center!important}
+@media(max-width:430px){.product-main{grid-template-columns:56px minmax(0,1fr) 82px 52px!important;column-gap:15px!important}.product-stock{width:82px!important;min-width:82px!important}.product-gear{width:52px!important;min-width:52px!important}}
+.move-sale,.move-sale .qty{color:#16834a!important}.move-purchase,.move-purchase .qty{color:#1769aa!important}
+.metric{cursor:pointer}
+.history-row{display:flex;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid #ddd;border-radius:9px;margin-bottom:6px;font-size:12px}.history-row span{text-align:right;opacity:.75}
 </style>
 </head>
 <body>
@@ -480,11 +488,8 @@ function renderSummary(){
   $("reorderList").innerHTML=low.length?low.map(p=>{const target=Math.max(p.target,p.min),need=Math.max(0,target-p.stock);return `<div class="row"><b>${esc(p.name)}</b><span>${need>0?`Comprar ${need}`:"En mínimo"} · objetivo ${target}</span></div>`}).join(""):"<div class='empty'>Todo en niveles normales.</div>";
 }
 function renderMoves(){
-  const list=state.operations.filter(o=>moveFilter==="all"||o.type===moveFilter).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
-  $("movementList").innerHTML=list.length?list.map(o=>{
-    const q=unitsOperation(o), total=totalOperation(o), text=o.items.map(i=>`${esc(i.name)} × ${i.qty}`).join(" · ");
-    return `<div class="move"><div><div class="mname">${o.type==="sale"?"VENTA":"COMPRA"} · ${q} ${q===1?"unidad":"unidades"}</div><div class="meta">${new Date(o.date).toLocaleString("es-AR")} · ${text} · ${money(total)}</div></div><div class="qty ${o.type==="sale"?"minus":"plus"}">${o.type==="sale"?"−":"+"}${q}</div><div class="moveactions"><button data-edit-operation="${o.id}">✏️</button><button data-delete-operation="${o.id}">🗑️</button></div></div>`;
-  }).join(""):"<div class='empty'>No hay movimientos para mostrar.</div>";
+ const list=state.operations.filter(o=>moveFilter==="all"||o.type===moveFilter).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+ $("movementList").innerHTML=list.length?list.map(o=>{const q=unitsOperation(o),total=totalOperation(o),text=o.items.map(i=>`${esc(i.name)} × ${i.qty}`).join(" · "),cls=o.type==="sale"?"move-sale":"move-purchase",sign=o.type==="sale"?"−":"+";return `<div class="move ${cls}"><div><div class="mname">${o.type==="sale"?"VENTA":"COMPRA"} · ${q} ${q===1?"unidad":"unidades"}</div><div class="meta">${new Date(o.date).toLocaleString("es-AR")} · ${text} · ${money(total)}</div></div><div class="qty">${sign}${q}</div><div class="moveactions"><button data-edit-operation="${o.id}">✏️</button><button data-delete-operation="${o.id}">🗑️</button></div></div>`}).join(""):"<div class='empty'>No hay movimientos para mostrar.</div>";
 }
 function renderAll(){renderProducts();renderSummary();renderMoves()}
 
@@ -814,5 +819,10 @@ maybeOfferRecovery();
 })();
 </script>
 
-</body>
+<script>
+(function(){function w(){document.querySelectorAll('input[type="number"]').forEach(function(i){if(i.dataset.nx) return;i.dataset.nx=1;i.addEventListener("focus",function(){if(this.value==="1")this.select()});i.addEventListener("click",function(){if(this.value==="1")this.select()})})}document.addEventListener("DOMContentLoaded",w);new MutationObserver(w).observe(document.body,{subtree:true,childList:true})})();
+</script><div class="modal" id="historyModal"><div class="sheet"><div class="modalhead"><h3 id="historyTitle">HISTORIAL</h3><button class="iconbtn" id="closeHistory">✕</button></div><div id="historyContent"></div></div></div>
+<script>
+(function(){function wk(d){let x=new Date(d);x.setHours(0,0,0,0);let n=(x.getDay()+6)%7;x.setDate(x.getDate()-n);return x.toISOString().slice(0,10)}function mk(d){let x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")}function openHist(k){let a={};state.operations.filter(o=>o.type==="sale").forEach(o=>{let key=k==="week"?wk(o.date):mk(o.date),q=unitsOperation(o),v=totalOperation(o),p=profitOperation(o);if(!a[key])a[key]={v:0,p:0,q:0};a[key].v+=v;a[key].p+=p;a[key].q+=q});let rows=Object.entries(a).sort((x,y)=>y[0].localeCompare(x[0])).slice(0,12);$("historyTitle").textContent=k==="week"?"HISTORIAL SEMANAL":"HISTORIAL MENSUAL";$("historyContent").innerHTML=rows.length?rows.map(([d,x])=>`<div class="history-row"><b>${d}</b><span>${money(x.v)} · ${money(x.p)} gan. · ${x.q} un.</span></div>`).join(""):"<div class='empty'>Todavía no hay ventas.</div>";show("historyModal")}document.addEventListener("DOMContentLoaded",function(){document.querySelectorAll(".metric").forEach(e=>{let t=(e.textContent||"").toUpperCase();if(t.includes("VENTAS SEMANA"))e.onclick=()=>openHist("week");if(t.includes("VENTAS MES"))e.onclick=()=>openHist("month")});$("closeHistory")?.addEventListener("click",()=>close("historyModal"))})})();
+</script></body>
 </html>
