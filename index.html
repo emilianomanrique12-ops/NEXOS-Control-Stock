@@ -429,7 +429,11 @@ function load(){
         d.products.forEach(p=>{p.openingStock=p.stock;p.openingCost=p.cost});
         saveStateObject(d);
       } else { d.products.forEach(p=>{if(p.openingStock==null)p.openingStock=p.stock;if(p.openingCost==null)p.openingCost=p.cost}); }
-      state=d;return}}
+      d.products.forEach(p=>{p.cost=roundPesos(p.cost);p.openingCost=roundPesos(p.openingCost);if(p.lastPurchaseCost)p.lastPurchaseCost=roundPesos(p.lastPurchaseCost)});
+      state=d;
+      recomputeAllInventory();
+      saveStateObject(state);
+      return}}
   }catch(e){}
   state={products:[],operations:[],statsHistory:{weeks:{},months:{}},costTrackingStart:new Date().toISOString()};
 }
@@ -490,6 +494,7 @@ function renderStatsHistory(){
 }
 
 function renderSummary(){
+  recomputeAllInventory();
   const now=new Date(), day=new Date(now);day.setHours(0,0,0,0);
   const week=new Date(day);week.setDate(week.getDate()-((week.getDay()+6)%7));
   const month=new Date(now.getFullYear(),now.getMonth(),1);
@@ -509,7 +514,7 @@ function renderMoves(){
     return `<div class="move"><div><div class="mname">${o.type==="sale"?"VENTA":"COMPRA"} · ${q} ${q===1?"unidad":"unidades"}</div><div class="meta">${new Date(o.date).toLocaleString("es-AR")} · ${text} · ${money(total)}</div></div><div class="qty ${o.type==="sale"?"minus":"plus"}">${o.type==="sale"?"−":"+"}${q}</div><div class="moveactions"><button data-edit-operation="${o.id}">✏️</button><button data-delete-operation="${o.id}">🗑️</button></div></div>`;
   }).join(""):"<div class='empty'>No hay movimientos para mostrar.</div>";
 }
-function renderAll(){renderProducts();renderSummary();renderMoves()}
+function renderAll(){recomputeAllInventory();renderProducts();renderSummary();renderMoves()}
 
 function renderPurchaseHistory(pid){
   const p=productById(pid); if(!p)return;
@@ -579,28 +584,44 @@ function renderTxItems(){
   $("transactionItems").innerHTML=txItems.length?txItems.map((i,idx)=>`<div class="line"><select data-tx-select="${idx}">${state.products.map(p=>`<option value="${p.id}" ${p.id===i.productId?"selected":""}>${esc(p.name)}</option>`).join("")}</select><input type="number" min="1" step="1" value="${i.qty}" data-tx-qty="${idx}">${transactionType==="purchase"?`<input type="number" min="0" step="1" value="${i.unitPrice}" data-tx-price="${idx}" aria-label="Costo unitario">`:""}<button data-tx-remove="${idx}">×</button></div>`).join(""):"<div class='empty'>Todavía no agregaste artículos.</div>";
   $("transactionTotal").textContent=money(txItems.reduce((s,i)=>s+i.qty*i.unitPrice,0));
 }
+function roundPesos(n){
+  const x=Number(n);
+  return Number.isFinite(x)?Math.round(x):0;
+}
 function recomputeProductCost(pid){
   const p=productById(pid); if(!p)return;
   const start=state.costTrackingStart?new Date(state.costTrackingStart):new Date(0);
-  let qty=Math.max(0,Number(p.openingStock)||0);
-  let value=qty*(Number(p.openingCost)||0);
+  let qty=Math.max(0,Math.floor(Number(p.openingStock)||0));
+  let value=qty*Number(p.openingCost||0);
+  let last=Number(p.lastPurchaseCost||0);
   const ops=state.operations.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
-  let last=0;
   for(const op of ops){
     if(new Date(op.date)<start)continue;
     for(const i of op.items){
       if(i.productId!==pid)continue;
-      const n=Math.max(0,Number(i.qty)||0);
-      if(op.type==="purchase"){value+=n*(Number(i.unitPrice)||0);qty+=n;last=Number(i.unitPrice)||0;}
-      else qty=Math.max(0,qty-n);
+      const n=Math.max(0,Math.floor(Number(i.qty)||0));
+      if(!n)continue;
+      if(op.type==="purchase"){
+        const unit=roundPesos(i.unitPrice);
+        value+=n*unit;
+        qty+=n;
+        last=unit;
+      }else{
+        qty=Math.max(0,qty-n);
+        // Once all units are gone, the old inventory value is gone too.
+        if(qty===0)value=0;
+      }
     }
   }
   p.stock=qty;
-  p.cost=qty>0?value/qty:(last||p.cost||0);
-  if(last)p.lastPurchaseCost=last;
+  p.cost=qty>0?roundPesos(value/qty):(last||roundPesos(p.cost));
+  p.openingCost=roundPesos(p.openingCost);
+  if(last)p.lastPurchaseCost=roundPesos(last);
 }
-
-function recomputeCostsForProducts(ids){for(const id of ids)recomputeProductCost(id)}
+function recomputeCostsForProducts(ids){for(const id of new Set(ids))recomputeProductCost(id)}
+function recomputeAllInventory(){
+  for(const p of state.products)recomputeProductCost(p.id);
+}
 
 function saveTransaction(){
   if(!txItems.length)return toast("Agregá al menos un artículo.");
@@ -608,20 +629,10 @@ function saveTransaction(){
   if(transactionType==="sale"){
     for(const [pid,q] of Object.entries(qtyByProduct)){const p=productById(pid);if(!p||p.stock<q)return toast(`Stock insuficiente: ${p?.name||"producto"}.`)}
   }
-  const op={id:uid(),type:transactionType,date:new Date().toISOString(),items:txItems.map(i=>({...i,cost:transactionType==="sale"?i.cost:i.unitPrice}))};
-  for(const [pid,q] of Object.entries(qtyByProduct)){
-    const p=productById(pid);
-    if(transactionType==="sale") p.stock-=q;
-    else {
-      const purchaseItems=op.items.filter(i=>i.productId===pid);
-      const addedValue=purchaseItems.reduce((s,i)=>s+i.qty*i.unitPrice,0);
-      const oldValue=p.stock*p.cost;
-      p.stock+=q;
-      p.cost=p.stock>0?(oldValue+addedValue)/p.stock:0;
-      p.lastPurchaseCost=purchaseItems.length?purchaseItems[purchaseItems.length-1].unitPrice:p.lastPurchaseCost||0;
-    }
-  }
-  state.operations.push(op);save();close("transactionModal");renderAll();toast(transactionType==="sale"?"Venta registrada.":"Compra registrada y costo promedio actualizado.");
+  const op={id:uid(),type:transactionType,date:new Date().toISOString(),items:txItems.map(i=>({...i,unitPrice:roundPesos(i.unitPrice),cost:transactionType==="sale"?roundPesos(i.cost):roundPesos(i.unitPrice)}))};
+  state.operations.push(op);
+  recomputeCostsForProducts(Object.keys(qtyByProduct));
+  save();close("transactionModal");renderAll();toast(transactionType==="sale"?"Venta registrada.":"Compra registrada y costo promedio actualizado.");
 }
 
 function openEditOperation(id){
@@ -636,31 +647,41 @@ function renderEditOperationItems(op){
 function saveEditOperation(){
   const op=state.operations.find(o=>o.id===editOperationId);if(!op)return;
   const oldIds=op.items.map(i=>i.productId);
-  const rows=[...$("editOperationItems").querySelectorAll(".line")].map(r=>{const pid=r.querySelector("select").value,p=productById(pid),inputs=r.querySelectorAll("input"),qty=Math.max(1,Math.floor(Number(inputs[0]?.value)||1)),price=op.type==="purchase"?Math.max(0,Number(inputs[1]?.value)||0):p.sale;return{productId:pid,name:p.name,qty,unitPrice:price,cost:p.cost}}).filter(Boolean);
+  const rows=[...$("editOperationItems").querySelectorAll(".line")].map(r=>{
+    const pid=r.querySelector("select").value,p=productById(pid),inputs=r.querySelectorAll("input");
+    if(!p)return null;
+    const qty=Math.max(1,Math.floor(Number(inputs[0]?.value)||1));
+    const price=op.type==="purchase"?roundPesos(Math.max(0,Number(inputs[1]?.value)||0)):roundPesos(p.sale);
+    return{productId:pid,name:p.name,qty,unitPrice:price,cost:op.type==="sale"?roundPesos(p.cost):price};
+  }).filter(Boolean);
   if(!rows.length)return toast("La operación debe tener al menos un artículo.");
-  // Revert old operation first.
-  for(const it of op.items){const p=productById(it.productId);if(p)p.stock+=op.type==="sale"?it.qty:-it.qty}
-  const q={};rows.forEach(i=>q[i.productId]=(q[i.productId]||0)+i.qty);
-  if(op.type==="sale"){
-    for(const [pid,n] of Object.entries(q)){const p=productById(pid);if(!p||p.stock<n){
-      // Restore original stock effects before aborting.
-      for(const it of op.items){const pp=productById(it.productId);if(pp)pp.stock-=op.type==="sale"?it.qty:-it.qty}
-      return toast(`Stock insuficiente: ${p?.name||"producto"}.`);
-    }}
-  }
-  for(const [pid,n] of Object.entries(q)){const p=productById(pid);p.stock+=op.type==="sale"?-n:n}
+
+  // Temporarily replace the operation and rebuild affected inventory from the
+  // saved opening baseline. This handles product changes, quantity changes,
+  // additions/removals and later purchases/sales without leaving stale stock.
+  const previous=op.items.map(i=>({...i}));
   op.items=rows;
-  if(op.type==="purchase")recomputeCostsForProducts([...new Set([...oldIds,...rows.map(i=>i.productId)])]);
-  save();close("editOperationModal");renderAll();toast("Operación actualizada.");
+  const affected=[...new Set([...oldIds,...rows.map(i=>i.productId)])];
+  if(op.type==="purchase"){
+    for(const id of affected)recomputeProductCost(id);
+  }else{
+    // Sales do not change average cost, but their stock effect must be rebuilt.
+    for(const id of affected)recomputeProductCost(id);
+    for(const id of affected){
+      const p=productById(id);
+      if(p && p.stock<0){op.items=previous;recomputeCostsForProducts(affected);return toast(`No hay stock suficiente para guardar la venta de ${p.name}.`)}
+    }
+  }
+  save();close("editOperationModal");renderAll();toast("Operación actualizada correctamente.");
 }
+
 function deleteOperation(id){
   const op=state.operations.find(o=>o.id===id);if(!op)return;
-  confirmAction("ELIMINAR MOVIMIENTO","¿Seguro que querés eliminar toda esta operación? El stock se recalculará.",()=>{
+  confirmAction("ELIMINAR MOVIMIENTO","¿Seguro que querés eliminar toda esta operación? El stock y los valores del resumen se recalcularán.",()=>{
     const affected=[...new Set(op.items.map(i=>i.productId))];
-    for(const it of op.items){const p=productById(it.productId);if(p)p.stock+=op.type==="sale"?it.qty:-it.qty}
     state.operations=state.operations.filter(o=>o.id!==id);
-    if(op.type==="purchase")recomputeCostsForProducts(affected);
-    save();renderAll();toast("Movimiento eliminado.");
+    recomputeCostsForProducts(affected);
+    save();renderAll();toast("Movimiento eliminado y stock recalculado.");
   });
 }
 
