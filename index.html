@@ -408,7 +408,7 @@ function normalizeBackup(raw){
     for(const o of purchases)for(const i of o.items)if(i.productId===p.id)last=Number(i.unitPrice)||0;
     if(last)p.lastPurchaseCost=last;
   }
-  const history=raw.statsHistory&&typeof raw.statsHistory==="object"?raw.statsHistory:{weeks:{},months:{}}; return {products,operations,statsHistory:{weeks:history.weeks||{},months:history.months||{}},costTrackingStart:raw.costTrackingStart||new Date().toISOString()};
+  const history=raw.statsHistory&&typeof raw.statsHistory==="object"?raw.statsHistory:{weeks:{},months:{}}; return {products,operations,statsHistory:{weeks:history.weeks||{},months:history.months||{}},costTrackingStart:raw.costTrackingStart||new Date().toISOString(),inventoryLogicVersion:Number(raw.inventoryLogicVersion)||0};
 }
 function isValidState(x){return x&&Array.isArray(x.products)&&x.products.length>0&&Array.isArray(x.operations)}
 async function resizeImage(file){
@@ -420,22 +420,27 @@ async function resizeImage(file){
   c.getContext("2d").drawImage(img,0,0,c.width,c.height);
   return c.toDataURL("image/jpeg",.82);
 }
+function establishInventoryBaseline(d){
+  // One-time safe migration: current stock/cost are authoritative. Older movements
+  // remain in the ledger for reporting, but must not overwrite manually corrected values.
+  d.costTrackingStart=new Date(Date.now()).toISOString();
+  d.products.forEach(p=>{p.openingStock=Math.max(0,Math.floor(Number(p.stock)||0));p.openingCost=roundPesos(p.cost);p.cost=roundPesos(p.cost)});
+  d.inventoryLogicVersion=2;
+  return d;
+}
 function load(){
   try{
     const raw=localStorage.getItem(STORE_KEY);
     if(raw){const d=normalizeBackup(JSON.parse(raw));if(isValidState(d)){
-      if(!d.costTrackingStart){
-        d.costTrackingStart=new Date().toISOString();
-        d.products.forEach(p=>{p.openingStock=p.stock;p.openingCost=p.cost});
-        saveStateObject(d);
-      } else { d.products.forEach(p=>{if(p.openingStock==null)p.openingStock=p.stock;if(p.openingCost==null)p.openingCost=p.cost}); }
+      if(d.inventoryLogicVersion!==2){establishInventoryBaseline(d)}
+      else { d.products.forEach(p=>{if(p.openingStock==null)p.openingStock=p.stock;if(p.openingCost==null)p.openingCost=p.cost}); }
       d.products.forEach(p=>{p.cost=roundPesos(p.cost);p.openingCost=roundPesos(p.openingCost);if(p.lastPurchaseCost)p.lastPurchaseCost=roundPesos(p.lastPurchaseCost)});
       state=d;
       recomputeAllInventory();
       saveStateObject(state);
       return}}
   }catch(e){}
-  state={products:[],operations:[],statsHistory:{weeks:{},months:{}},costTrackingStart:new Date().toISOString()};
+  state={products:[],operations:[],statsHistory:{weeks:{},months:{}},costTrackingStart:new Date(Date.now()).toISOString(),inventoryLogicVersion:2};
 }
 function status(p){
   if(p.stock<=0)return["bad","SIN STOCK"];
@@ -542,8 +547,9 @@ function openProduct(pid){
   $("deleteProduct").style.display=p?"block":"none";$("viewPurchaseHistory").style.display=p?"block":"none";show("productModal");
 }
 function resetCostBaseline(){
-  state.costTrackingStart=new Date().toISOString();
-  state.products.forEach(p=>{p.openingStock=p.stock;p.openingCost=p.cost});
+  state.costTrackingStart=new Date(Date.now()).toISOString();
+  state.inventoryLogicVersion=2;
+  state.products.forEach(p=>{p.openingStock=Math.max(0,Math.floor(Number(p.stock)||0));p.openingCost=roundPesos(p.cost)});
 }
 
 function saveProduct(){
@@ -607,8 +613,12 @@ function recomputeProductCost(pid){
         qty+=n;
         last=unit;
       }else{
-        qty=Math.max(0,qty-n);
-        // Once all units are gone, the old inventory value is gone too.
+        // A sale removes the cost value of the units sold at the average cost
+        // immediately before the sale. It must never inflate the remaining unit cost.
+        const sold=Math.min(qty,n);
+        const averageBefore=qty>0?value/qty:0;
+        qty-=sold;
+        value=Math.max(0,value-sold*averageBefore);
         if(qty===0)value=0;
       }
     }
@@ -689,7 +699,7 @@ function confirmAction(title,text,fn){$("confirmTitle").textContent=title;$("con
 $("confirmOk").onclick=()=>{const fn=confirmFn;confirmFn=null;close("confirmModal");if(fn)fn()};
 
 function exportBackup(){
-  rebuildStatsHistory(); const payload={version:9,exportedAt:new Date().toISOString(),products:state.products,operations:state.operations,statsHistory:state.statsHistory};
+  rebuildStatsHistory(); const payload={version:9,exportedAt:new Date().toISOString(),products:state.products,operations:state.operations,statsHistory:state.statsHistory,costTrackingStart:state.costTrackingStart,inventoryLogicVersion:2};
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}));a.download=`NEXOS_Respaldo_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);toast("Respaldo exportado.");
 }
 function importBackup(file){
@@ -699,6 +709,7 @@ function importBackup(file){
       const incoming=normalizeBackup(JSON.parse(reader.result));
       if(!isValidState(incoming))throw Error("No contiene productos válidos.");
       if(!confirm(`RESPALDO RECONOCIDO\n\n${incoming.products.length} artículos\n${incoming.operations.length} operaciones\n\n¿Querés importarlo?`))return;
+      if(incoming.inventoryLogicVersion!==2)establishInventoryBaseline(incoming);
       state=incoming;save();close("settingsModal");renderAll();toast("Respaldo importado correctamente.");
     }catch(e){alert("RESPALDO NO VÁLIDO\n\nNo se modificaron los datos actuales.\n\n"+e.message)}
   };
